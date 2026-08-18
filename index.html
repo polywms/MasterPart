@@ -426,8 +426,9 @@
 
     function runSearch() {
         if(dbData.length === 0) return;
+
         const valUnit = document.getElementById("inputUnit").value.toLowerCase().trim();
-        const valPart = document.getElementById("inputPart").value.toLowerCase().trim();
+        const valPartRaw = document.getElementById("inputPart").value.toLowerCase().trim();
         const container = document.getElementById("resultContainer");
         const countLabel = document.getElementById("resultCount");
 
@@ -437,6 +438,9 @@
             return;
         }
 
+        // KUNCI PENCARIAN FLEKSIBEL: Pecah kata kunci berdasarkan spasi
+        const searchWords = valPartRaw === "" ? [] : valPartRaw.split(/\s+/);
+
         let results = [];
         for (let i = 0; i < dbData.length; i++) {
             const row = dbData[i];
@@ -444,14 +448,32 @@
             const nPart = (row[3] || "").toString().toLowerCase();
             const typePart = (row[4] || "").toString().toLowerCase();
 
+            // Pencarian Tipe Unit
             let matchUnit = tUnit.includes(valUnit);
-            let matchPart = valPart === "" || nPart.includes(valPart) || typePart.includes(valPart);
+
+            // Pencarian Multi-Kata untuk Nama Part / Type Part
+            let matchPart = true; 
+            if (searchWords.length > 0) {
+                // Gabungkan teks nama part dan type part agar pencarian lebih luas
+                const textTarget = nPart + " " + typePart; 
+                
+                // Cek setiap kata yang diketik teknisi
+                for (let w = 0; w < searchWords.length; w++) {
+                    // Jika ada satu kata saja yang tidak cocok, berarti part ini gugur
+                    if (!textTarget.includes(searchWords[w])) {
+                        matchPart = false;
+                        break; 
+                    }
+                }
+            }
 
             if (matchUnit && matchPart) {
                 results.push(row);
+                // Batasi 100 hasil agar HP teknisi tidak nge-lag saat merender list
                 if (results.length >= 100) break; 
             }
         }
+
         renderResults(results);
     }
 
