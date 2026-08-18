@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MGL Sparepart</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#CC0000">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <style>
         :root {
             --primary: #CC0000; /* Merah solid elegan */
@@ -212,6 +215,14 @@
 </div>
 
 <script>
+    // Registrasi Service Worker untuk Mode Offline (PWA)
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Service Worker berhasil didaftarkan!', reg.scope))
+                .catch(err => console.log('Service Worker gagal didaftarkan', err));
+        });
+    }
     // MASUKKAN URL API GOOGLE SCRIPT ANDA DI SINI
     const API_URL = "https://script.google.com/macros/s/AKfycbyBsmTajsfLEoqflORDQBiQNiICs1aGSaWt5oc0vUQUdMxr60rOwCR2D4aPPLW-kV5k/exec";
 
