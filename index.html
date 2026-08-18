@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MGL Sparepart</title>
+    <style>
+        :root {
+            --primary: #CC0000; /* Merah solid elegan */
+            --bg: #f3f4f6;
+            --text: #1f2937;
+            --border: #d1d5db;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg); color: var(--text);
+            margin: 0; padding: 0;
+        }
+
+        /* TAMPILAN LOGIN */
+        #loginScreen {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--bg); z-index: 200;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 20px;
+        }
+        .login-box {
+            background: white; padding: 30px 25px; border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); width: 100%; max-width: 350px;
+            text-align: center; box-sizing: border-box;
+        }
+        .login-box h2 { margin-top: 0; color: var(--primary); font-size: 22px;}
+        .login-box p { font-size: 13px; color: #6b7280; margin-bottom: 20px;}
+        /* Modifikasi Input No HP dengan +62 */
+        .phone-input-group {
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 10px;
+            background-color: white;
+            overflow: hidden;
+        }
+        .phone-prefix {
+            background-color: #f3f4f6;
+            color: #4b5563;
+            padding: 12px 15px;
+            font-weight: 700;
+            font-size: 16px;
+            border-right: 1px solid var(--border);
+        }
+        .login-input {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            font-size: 16px;
+            letter-spacing: 1px;
+            outline: none;
+            background: transparent;
+        }
+        .login-btn {
+            background: var(--primary); color: white; width: 100%; padding: 12px;
+            border: none; border-radius: 6px; font-weight: bold; font-size: 15px;
+            margin-top: 10px; cursor: pointer; transition: 0.2s;
+        }
+        .login-btn:disabled { background: #fca5a5; cursor: not-allowed;}
+        #loginError { color: var(--primary); font-size: 13px; font-weight: 600; margin-bottom: 10px; display: none;}
+
+        /* APLIKASI UTAMA (Disembunyikan di awal) */
+        #mainApp { display: none; }
+        
+        .header {
+            background-color: var(--primary); color: white;
+            padding: 15px 20px; display: flex; justify-content: space-between;
+            align-items: center; position: sticky; top: 0; z-index: 50;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header h1 { margin: 0; font-size: 18px; font-weight: 700; }
+        .header-left { display: flex; flex-direction: column; }
+        .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px;}
+        
+        #welcomeName { font-size: 11px; opacity: 0.9; margin-top: 2px;}
+        .logout-btn { 
+            background: transparent; border: 1px solid rgba(255,255,255,0.5); color: white; 
+            padding: 3px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;
+        }
+        
+        .status-badge {
+            padding: 4px 8px; border-radius: 4px;
+            font-size: 10px; font-weight: 700; text-transform: uppercase;
+        }
+        .status-badge.loading { background: #facc15; color: #713f12; }
+        .status-badge.ready { background: #22c55e; color: white; }
+        
+        .search-section { background: white; padding: 15px 20px; border-bottom: 1px solid var(--border); }
+        .input-row { display: flex; gap: 15px; margin-bottom: 5px; }
+        .input-group { flex: 1; position: relative; }
+        .input-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: #4b5563; }
+        .input-group input {
+            width: 100%; padding: 10px; border: 1px solid var(--border); 
+            border-radius: 6px; font-size: 14px; box-sizing: border-box; background-color: #f9fafb;
+        }
+        .input-group input:focus { outline: none; border-color: var(--primary); background-color: white;}
+        .input-group input:disabled { background-color: #e5e7eb; cursor: not-allowed; }
+
+        .autocomplete-list {
+            position: absolute; top: 100%; left: 0; right: 0; background: white; 
+            border: 1px solid var(--border); border-radius: 0 0 6px 6px; max-height: 200px; 
+            overflow-y: auto; z-index: 40; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: none;
+        }
+        .autocomplete-item { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid #f3f4f6; cursor: pointer; }
+        .autocomplete-item:hover, .autocomplete-item:active { background-color: #fef2f2; color: var(--primary); font-weight: 600;}
+
+        .results-container { padding: 15px 20px; }
+        .result-count { font-size: 12px; color: #6b7280; margin-bottom: 12px; font-weight: 500;}
+        
+        .result-item {
+            background: white; padding: 12px 15px; border-radius: 8px;
+            border: 1px solid var(--border); margin-bottom: 10px; cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .result-item:active { background: #f9fafb; border-color: var(--primary);}
+        .row-top { display: flex; justify-content: space-between; margin-bottom: 6px; align-items: center;}
+        .part-no { font-weight: 700; color: #111827; font-size: 15px;}
+        .harga { font-weight: 700; color: var(--primary); font-size: 14px;}
+        .row-bottom { display: flex; justify-content: space-between; font-size: 13px; color: #4b5563;}
+        .part-type { font-weight: 600; background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 11px;}
+        .part-name { flex: 1; text-align: right; padding-left: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6); display: none;
+            justify-content: center; align-items: center; padding: 20px; z-index: 100;
+        }
+        .modal-content { background: white; width: 100%; max-width: 400px; border-radius: 8px; overflow: hidden; }
+        .modal-header {
+            padding: 15px; background: var(--primary); color: white;
+            font-weight: bold; display: flex; justify-content: space-between;
+        }
+        .close-btn { color: white; cursor: pointer; font-size: 18px; font-weight: bold; }
+        .modal-body { padding: 15px; max-height: 70vh; overflow-y: auto; }
+        .detail-row {
+            display: flex; flex-direction: column; margin-bottom: 10px;
+            border-bottom: 1px solid #f3f4f6; padding-bottom: 8px;
+        }
+        .detail-label { font-size: 11px; color: #6b7280; font-weight: bold; text-transform: uppercase;}
+        .detail-value { font-size: 15px; font-weight: 500; margin-top: 2px;}
+        
+        .loading-text { text-align: center; font-size: 13px; color: #6b7280; padding: 20px; }
+    </style>
+</head>
+<body>
+
+<!-- LAYAR LOGIN -->
+<div id="loginScreen">
+    <div class="login-box">
+        <h2>Login</h2>
+        <div class="phone-input-group">
+            <span class="phone-prefix">+62</span>
+            <input type="tel" id="loginPhone" class="login-input" placeholder="812-xxxx-xxxx" autocomplete="off">
+        </div>
+        <div id="loginError"></div>
+        <button id="loginBtn" class="login-btn" onclick="prosesLogin()">Masuk Sistem</button>
+    </div>
+</div>
+
+<!-- LAYAR UTAMA (MGL SPAREPART) -->
+<div id="mainApp">
+    <div class="header">
+        <div class="header-left">
+            <h1>Data Sparepart</h1>
+            <div id="welcomeName"></div>
+        </div>
+        <div class="header-right">
+            <button class="logout-btn" onclick="prosesLogout()">Ganti Akun</button>
+            <div id="syncStatus" class="status-badge loading">Loading</div>
+        </div>
+    </div>
+
+    <div class="search-section">
+        <div class="input-row">
+            <div class="input-group">
+                <label>Tipe Unit</label>
+                <input type="text" id="inputUnit" placeholder="Ketik Tipe..." disabled autocomplete="off">
+                <div id="autocompleteList" class="autocomplete-list"></div>
+            </div>
+            <div class="input-group">
+                <label>Nama Part / Type</label>
+                <input type="text" id="inputPart" placeholder="Ketik Part..." disabled autocomplete="off">
+            </div>
+        </div>
+    </div>
+
+    <div class="results-container">
+        <div id="resultCount" class="result-count"></div>
+        <div id="resultContainer">
+            <div class="loading-text">Menyiapkan database...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detail -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>Detail Part</span>
+            <span class="close-btn" onclick="closeModal()">✕</span>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+    </div>
+</div>
+
+<script>
+    // MASUKKAN URL API GOOGLE SCRIPT ANDA DI SINI
+    const API_URL = "https://script.google.com/macros/s/GANTI_DENGAN_URL_ANDA/exec";
+
+    let dbData = [];
+    let dbHeaders = [];
+    let uniqueTipeUnits = []; 
+    
+    const DB_NAME = "PartDatabase";
+    const STORE_NAME = "inventory";
+    
+    // Variabel Sesi Login
+    let currentUserPhone = localStorage.getItem("mgl_session_phone");
+    let currentUserName = localStorage.getItem("mgl_session_name");
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const savedTime = localStorage.getItem("mgl_session_time");
+        const now = new Date().getTime();
+        const ONE_DAY = 24 * 60 * 60 * 1000; 
+
+        if (currentUserPhone && savedTime && (now - savedTime < ONE_DAY)) {
+            bukaAplikasi(false); 
+        } else {
+            if (currentUserPhone) {
+                localStorage.removeItem("mgl_session_phone");
+                localStorage.removeItem("mgl_session_name");
+                localStorage.removeItem("mgl_session_time");
+                currentUserPhone = null;
+                alert("Sesi harian Anda telah berakhir. Silakan login kembali untuk memperbarui data.");
+            }
+        }
+        
+        document.getElementById("loginPhone").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") prosesLogin();
+        });
+    });
+
+    // --- FUNGSI KOMUNIKASI KE GOOGLE SCRIPT (FETCH API) ---
+    // Menggunakan text/plain untuk menghindari error CORS Preflight dari Google
+    async function panggilAPI(action, phone) {
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: action, phone: phone })
+            });
+            return await response.json();
+        } catch (error) {
+            throw new Error("Gagal terhubung ke server. Periksa koneksi internet.");
+        }
+    }
+
+    // --- LOGIKA LOGIN & LOGOUT ---
+    async function prosesLogin() {
+        const phoneInput = document.getElementById("loginPhone").value.trim();
+        const btn = document.getElementById("loginBtn");
+        const err = document.getElementById("loginError");
+
+        if(!phoneInput) {
+            err.textContent = "Nomor HP wajib diisi!";
+            err.style.display = "block";
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "Memverifikasi...";
+        err.style.display = "none";
+
+        try {
+            const res = await panggilAPI("login", phoneInput);
+            
+            if(res.success) {
+                localStorage.setItem("mgl_session_phone", phoneInput);
+                localStorage.setItem("mgl_session_name", res.name);
+                localStorage.setItem("mgl_session_time", new Date().getTime()); 
+                
+                currentUserPhone = phoneInput;
+                currentUserName = res.name;
+                bukaAplikasi(true); 
+            } else {
+                err.textContent = res.message;
+                err.style.display = "block";
+                btn.disabled = false;
+                btn.textContent = "Masuk Sistem";
+            }
+        } catch (error) {
+            err.textContent = error.message;
+            err.style.display = "block";
+            btn.disabled = false;
+            btn.textContent = "Masuk Sistem";
+        }
+    }
+
+    function prosesLogout() {
+        localStorage.removeItem("mgl_session_phone");
+        localStorage.removeItem("mgl_session_name");
+        localStorage.removeItem("mgl_session_time");
+        indexedDB.deleteDatabase(DB_NAME); 
+        window.location.reload(); 
+    }
+
+    function bukaAplikasi(isNewLogin) {
+        document.getElementById("loginScreen").style.display = "none";
+        document.getElementById("mainApp").style.display = "block";
+        document.getElementById("welcomeName").textContent = "Halo, " + currentUserName;
+        initSystem(isNewLogin); 
+    }
+
+    // --- LOGIKA UTAMA APLIKASI SPAREPART ---
+    function initSystem(isNewLogin) {
+        const inputUnit = document.getElementById("inputUnit");
+        const inputPart = document.getElementById("inputPart");
+
+        inputUnit.addEventListener("input", function() {
+            showAutocomplete(this.value);
+            if (this.value.trim() === "") {
+                inputPart.value = "";
+                inputPart.disabled = true;
+            } else {
+                inputPart.disabled = false;
+            }
+            runSearch();
+        });
+
+        document.addEventListener("click", function(e) {
+            if (e.target.id !== "inputUnit") document.getElementById("autocompleteList").style.display = "none";
+        });
+
+        inputPart.addEventListener("input", runSearch);
+
+        loadFromIndexedDB().then(hasData => {
+            if (hasData) {
+                setReadyStatus("Syncing..."); 
+                document.getElementById("syncStatus").className = "status-badge loading";
+                extractUniqueUnits();
+                enableInputs(); 
+                syncDataFromGoogle(true); 
+            } else {
+                document.getElementById("syncStatus").textContent = "Mengunduh Data...";
+                document.getElementById("syncStatus").className = "status-badge loading";
+                document.getElementById("inputUnit").disabled = true;
+                document.getElementById("inputPart").disabled = true;
+                document.getElementById("resultContainer").innerHTML = '<div class="loading-text">Sedang menyinkronkan data perdana... Mohon tunggu.</div>';
+                syncDataFromGoogle(false); 
+            }
+        });
+    }
+
+    function setReadyStatus(text) {
+        const badge = document.getElementById("syncStatus");
+        badge.textContent = text;
+        badge.className = "status-badge ready";
+    }
+
+    function enableInputs() {
+        document.getElementById("inputUnit").disabled = false;
+        document.getElementById("inputPart").disabled = true; 
+        document.getElementById("resultContainer").innerHTML = '<div class="loading-text">Silakan ketik Tipe Unit terlebih dahulu.</div>';
+    }
+
+    function extractUniqueUnits() {
+        const tipeSet = new Set();
+        for (let i = 0; i < dbData.length; i++) {
+            if (dbData[i][1]) tipeSet.add(dbData[i][1].toString().trim());
+        }
+        uniqueTipeUnits = Array.from(tipeSet).sort();
+    }
+
+    function showAutocomplete(val) {
+        const list = document.getElementById("autocompleteList");
+        list.innerHTML = "";
+        val = val.toLowerCase().trim();
+        if (!val) { list.style.display = "none"; return; }
+
+        let count = 0;
+        for (let i = 0; i < uniqueTipeUnits.length; i++) {
+            if (uniqueTipeUnits[i].toLowerCase().includes(val)) {
+                const div = document.createElement("div");
+                div.className = "autocomplete-item";
+                const regex = new RegExp(`(${val})`, "gi");
+                div.innerHTML = uniqueTipeUnits[i].replace(regex, "<strong>$1</strong>");
+                div.onclick = function() {
+                    document.getElementById("inputUnit").value = uniqueTipeUnits[i];
+                    list.style.display = "none";
+                    document.getElementById("inputPart").disabled = false;
+                    document.getElementById("inputPart").focus(); 
+                    runSearch();
+                };
+                list.appendChild(div);
+                count++;
+                if (count >= 10) break;
+            }
+        }
+        list.style.display = count > 0 ? "block" : "none";
+    }
+
+    function formatRupiah(angka) {
+        if (!angka || isNaN(angka)) return angka || "-";
+        return Number(angka).toLocaleString('id-ID'); 
+    }
+
+    function runSearch() {
+        if(dbData.length === 0) return;
+        const valUnit = document.getElementById("inputUnit").value.toLowerCase().trim();
+        const valPart = document.getElementById("inputPart").value.toLowerCase().trim();
+        const container = document.getElementById("resultContainer");
+        const countLabel = document.getElementById("resultCount");
+
+        if (valUnit === "") {
+            container.innerHTML = '<div class="loading-text">Silakan ketik Tipe Unit terlebih dahulu.</div>';
+            countLabel.innerHTML = "";
+            return;
+        }
+
+        let results = [];
+        for (let i = 0; i < dbData.length; i++) {
+            const row = dbData[i];
+            const tUnit = (row[1] || "").toString().toLowerCase();
+            const nPart = (row[3] || "").toString().toLowerCase();
+            const typePart = (row[4] || "").toString().toLowerCase();
+
+            let matchUnit = tUnit.includes(valUnit);
+            let matchPart = valPart === "" || nPart.includes(valPart) || typePart.includes(valPart);
+
+            if (matchUnit && matchPart) {
+                results.push(row);
+                if (results.length >= 100) break; 
+            }
+        }
+        renderResults(results);
+    }
+
+    function renderResults(results) {
+        const container = document.getElementById("resultContainer");
+        const countLabel = document.getElementById("resultCount");
+        container.innerHTML = "";
+
+        if (results.length === 0) {
+            container.innerHTML = '<div class="loading-text">Tidak ada part yang ditemukan.</div>';
+            countLabel.innerHTML = "";
+            return;
+        }
+
+        countLabel.innerHTML = `Menampilkan ${results.length} hasil pencarian`;
+
+        results.forEach(row => {
+            const div = document.createElement("div");
+            div.className = "result-item";
+            div.innerHTML = `
+                <div class="row-top">
+                    <span class="part-no">${row[2] || '-'}</span>
+                    <span class="harga">${formatRupiah(row[6])}</span>
+                </div>
+                <div class="row-bottom">
+                    <span class="part-type">${row[4] || '-'}</span>
+                    <span class="part-name">${row[3] || '-'}</span>
+                </div>
+            `;
+            div.onclick = () => openModal(row);
+            container.appendChild(div);
+        });
+    }
+
+    function openModal(rowData) {
+        const modalBody = document.getElementById("modalBody");
+        modalBody.innerHTML = "";
+        dbHeaders.forEach((header, index) => {
+            let val = rowData[index] || '-';
+            if(index === 6) val = formatRupiah(val); 
+            modalBody.innerHTML += `
+                <div class="detail-row">
+                    <span class="detail-label">${header}</span>
+                    <span class="detail-value">${val}</span>
+                </div>
+            `;
+        });
+        document.getElementById("detailModal").style.display = "flex";
+    }
+
+    function closeModal() { document.getElementById("detailModal").style.display = "none"; }
+
+    window.onclick = function(event) {
+        if (event.target == document.getElementById("detailModal")) closeModal();
+    }
+
+    // --- INTEGRASI DB LOKAL & API ---
+    async function syncDataFromGoogle(isBackground) {
+        if(isBackground) {
+            document.getElementById("syncStatus").textContent = "Sync...";
+            document.getElementById("syncStatus").className = "status-badge loading";
+        }
+        
+        try {
+            const response = await panggilAPI("getData", currentUserPhone);
+            
+            if(response.error) {
+                console.error(response.error);
+                if(response.error.includes("Akses ditolak")) prosesLogout();
+                return;
+            }
+            
+            dbHeaders = response.headers;
+            dbData = response.data;
+            saveToIndexedDB(response.headers, response.data);
+            extractUniqueUnits(); 
+            
+            setReadyStatus("Ready");
+            if(!isBackground) enableInputs(); 
+            
+        } catch (error) {
+            console.error("Gagal sync:", error);
+            if(!isBackground) {
+                document.getElementById("syncStatus").textContent = "Error";
+                document.getElementById("syncStatus").style.background = "#ef4444";
+                document.getElementById("resultContainer").innerHTML = '<div class="loading-text">Gagal mengunduh data. Pastikan ada koneksi internet.</div>';
+            }
+        }
+    }
+
+    function getDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, 1);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                    db.createObjectStore(STORE_NAME, { keyPath: "id" });
+                }
+            };
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async function loadFromIndexedDB() {
+        try {
+            const db = await getDB();
+            return new Promise((resolve) => {
+                const tx = db.transaction(STORE_NAME, "readonly");
+                const store = tx.objectStore(STORE_NAME);
+                const request = store.get("alldata");
+                
+                request.onsuccess = () => {
+                    if (request.result) {
+                        dbHeaders = request.result.headers;
+                        dbData = request.result.data;
+                        resolve(true);
+                    } else {
+                        resolve(false);
+                    }
+                };
+            });
+        } catch (e) {
+            return false;
+        }
+    }
+
+    async function saveToIndexedDB(headers, data) {
+        const db = await getDB();
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        const store = tx.objectStore(STORE_NAME);
+        store.put({ id: "alldata", headers: headers, data: data });
+    }
+</script>
+
+</body>
+</html>
